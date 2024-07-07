@@ -16,7 +16,7 @@ import (
 func TestDeleteContent(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestDeleteContent(t *testing.T) {
 func TestDeleteClass(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func TestDeleteClass(t *testing.T) {
 func TestDeleteCollection(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}

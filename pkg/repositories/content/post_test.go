@@ -15,7 +15,7 @@ import (
 func TestCreateContent(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}

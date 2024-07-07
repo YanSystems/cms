@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	client, err := utils.ConnectToDB("./../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -15,7 +15,7 @@ import (
 func TestGetContent(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestGetContent(t *testing.T) {
 func TestGetCollection(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestGetCollection(t *testing.T) {
 func TestGetClass(t *testing.T) {
 	testsCollection := uuid.New().String()
 
-	client, err := utils.ConnectToDB("./../../../.env")
+	client, err := utils.ConnectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}

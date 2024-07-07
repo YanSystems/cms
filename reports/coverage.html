@@ -55,21 +55,23 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/YanSystems/cms/cmd/api/api.go (64.3%)</option>
+				<option value="file0">github.com/YanSystems/cms/cmd/api/api.go (78.3%)</option>
 				
 				<option value="file1">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
 				
 				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/delete.go (88.0%)</option>
 				
-				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/get.go (82.8%)</option>
+				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/get.go (89.7%)</option>
 				
-				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/post.go (73.7%)</option>
+				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/post.go (94.7%)</option>
 				
-				<option value="file5">github.com/YanSystems/cms/pkg/repositories/content/put.go (0.0%)</option>
+				<option value="file5">github.com/YanSystems/cms/pkg/repositories/content/put.go (95.7%)</option>
 				
-				<option value="file6">github.com/YanSystems/cms/pkg/utils/db/db.go (70.0%)</option>
+				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (0.0%)</option>
 				
-				<option value="file7">github.com/YanSystems/cms/pkg/utils/json/json.go (100.0%)</option>
+				<option value="file7">github.com/YanSystems/cms/pkg/utils/db/db.go (71.4%)</option>
+				
+				<option value="file8">github.com/YanSystems/cms/pkg/utils/json/json.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -91,6 +93,7 @@ import (
         "log/slog"
         "net/http"
 
+        "github.com/YanSystems/cms/pkg/services"
         "github.com/go-chi/chi/v5"
         "github.com/go-chi/cors"
         "go.mongodb.org/mongo-driver/mongo"
@@ -119,9 +122,19 @@ func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
                 w.Write([]byte("OK"))
         }</span>)
 
-        // Content services
+        <span class="cov8" title="1">contentService := services.ContentService{DB: s.DB}
 
-        <span class="cov8" title="1">return router</span>
+        // Content services
+        router.Post("/contents/{collection}", contentService.HandleCreateContent)
+        router.Get("/contents/{collection}", contentService.HandleGetCollection)
+        router.Get("/contents/{collection}/id/{id}", contentService.HandleGetContent)
+        router.Get("/contents/{collection}/class/{class}", contentService.HandleGetClass)
+        router.Put("/contents/{collection}/id/{id}", contentService.HandleUpdateContent)
+        router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
+        router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
+        router.Delete("/contnets/{collection}/class/{class}", contentService.HandleDeleteClass)
+
+        return router</span>
 }
 
 func (s *Server) NewServer() *http.Server <span class="cov8" title="1">{
@@ -155,7 +168,7 @@ import (
 )
 
 func main() <span class="cov0" title="0">{
-        client, err := utils.ConnectToDB("./../../.env")
+        client, err := utils.ConnectToDB()
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatal(err)
         }</span>
@@ -255,7 +268,7 @@ import (
 )
 
 func (r *ContentRepository) GetContent(coll string, id string) (*models.Content, error) <span class="cov8" title="1">{
-        if r.DB == nil </span><span class="cov0" title="0">{
+        if r.DB == nil </span><span class="cov8" title="1">{
                 return nil, errors.New("database connection is nil")
         }</span>
 
@@ -273,7 +286,7 @@ func (r *ContentRepository) GetContent(coll string, id string) (*models.Content,
                 <span class="cov0" title="0">return nil, err</span>
         }
 
-        <span class="cov0" title="0">return &amp;content, nil</span>
+        <span class="cov8" title="1">return &amp;content, nil</span>
 }
 
 func (r *ContentRepository) GetCollection(coll string) ([]models.Content, error) <span class="cov8" title="1">{
@@ -335,13 +348,13 @@ import (
 )
 
 func (r *ContentRepository) CreateContent(coll string, content *models.Content) (string, error) <span class="cov8" title="1">{
-        if err := validateContent(content); err != nil </span><span class="cov0" title="0">{
+        if err := validateContent(content); err != nil </span><span class="cov8" title="1">{
                 return "", err
         }</span>
 
         <span class="cov8" title="1">var existingContent models.Content
         err := r.DB.Collection(coll).FindOne(context.TODO(), bson.M{"id": content.Id}).Decode(&amp;existingContent)
-        if err == nil </span><span class="cov0" title="0">{
+        if err == nil </span><span class="cov8" title="1">{
                 return "", errors.New("content with this ID already exists")
         }</span>
 
@@ -365,8 +378,8 @@ func validateContent(content *models.Content) error <span class="cov8" title="1"
         validate := validator.New()
         validate.RegisterValidation("uuid", validateUUID)
         err := validate.Struct(content)
-        if err != nil </span><span class="cov0" title="0">{
-                for _, err := range err.(validator.ValidationErrors) </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
+                for _, err := range err.(validator.ValidationErrors) </span><span class="cov8" title="1">{
                         return fmt.Errorf("field %s is not valid: %v", err.StructField(), err)
                 }</span>
         }
@@ -378,74 +391,100 @@ func validateContent(content *models.Content) error <span class="cov8" title="1"
 
 import (
         "context"
+        "time"
 
         "github.com/YanSystems/cms/pkg/models"
         "go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent *models.Content) (string, error) <span class="cov0" title="0">{
-        update := bson.M{}
-        if updatedContent.Class != "" </span><span class="cov0" title="0">{
-                update["class"] = updatedContent.Class
-        }</span>
-        <span class="cov0" title="0">if updatedContent.Title != "" </span><span class="cov0" title="0">{
-                update["title"] = updatedContent.Title
-        }</span>
-        <span class="cov0" title="0">if updatedContent.Description != "" </span><span class="cov0" title="0">{
-                update["description"] = updatedContent.Description
-        }</span>
-        <span class="cov0" title="0">if updatedContent.Body != "" </span><span class="cov0" title="0">{
-                update["body"] = updatedContent.Body
-        }</span>
-        // Ensure IsPublic is always updated
-        <span class="cov0" title="0">update["is_public"] = updatedContent.IsPublic
-        if updatedContent.Views != 0 </span><span class="cov0" title="0">{
-                update["views"] = updatedContent.Views
-        }</span>
-        <span class="cov0" title="0">if updatedContent.CreatorId != "" </span><span class="cov0" title="0">{
-                update["creator_id"] = updatedContent.CreatorId
-        }</span>
-        <span class="cov0" title="0">if !updatedContent.UpdatedAt.IsZero() </span><span class="cov0" title="0">{
-                update["updated_at"] = updatedContent.UpdatedAt
-        }</span>
-        <span class="cov0" title="0">if !updatedContent.CreatedAt.IsZero() </span><span class="cov0" title="0">{
-                update["created_at"] = updatedContent.CreatedAt
+func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent *models.UpdateContent) (string, error) <span class="cov8" title="1">{
+        // Fetch the current content from the database
+        currentContent, err := r.GetContent(coll, id)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", err
         }</span>
 
-        <span class="cov0" title="0">_, err := r.DB.Collection(coll).UpdateOne(
+        // Update fields only if they are set in updatedContent
+        <span class="cov8" title="1">if updatedContent.Class != nil </span><span class="cov8" title="1">{
+                currentContent.Class = *updatedContent.Class
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Title != nil </span><span class="cov8" title="1">{
+                currentContent.Title = *updatedContent.Title
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Description != nil </span><span class="cov8" title="1">{
+                currentContent.Description = *updatedContent.Description
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Body != nil </span><span class="cov8" title="1">{
+                currentContent.Body = *updatedContent.Body
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Views != nil </span><span class="cov8" title="1">{
+                currentContent.Views = *updatedContent.Views
+        }</span>
+        <span class="cov8" title="1">if updatedContent.CreatorId != nil </span><span class="cov8" title="1">{
+                currentContent.CreatorId = *updatedContent.CreatorId
+        }</span>
+        <span class="cov8" title="1">if updatedContent.IsPublic != nil </span><span class="cov8" title="1">{
+                currentContent.IsPublic = *updatedContent.IsPublic
+        }</span>
+
+        // Always update UpdatedAt to the current time
+        <span class="cov8" title="1">currentContent.UpdatedAt = time.Now().UTC()
+
+        // Ensure CreatedAt is never updated
+        updatedContent.CreatedAt = &amp;currentContent.CreatedAt
+
+        // Update the document in the database
+        _, err = r.DB.Collection(coll).UpdateOne(
                 context.TODO(),
                 bson.D{{Key: "id", Value: id}},
-                bson.D{{Key: "$set", Value: update}},
+                bson.D{{Key: "$set", Value: currentContent}},
         )
 
         if err != nil </span><span class="cov0" title="0">{
                 return "", err
         }</span>
 
-        <span class="cov0" title="0">return id, nil</span>
+        <span class="cov8" title="1">return id, nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package utils
+		<pre class="file" id="file6" style="display: none">package services
+
+import (
+        "net/http"
+
+        "go.mongodb.org/mongo-driver/mongo"
+)
+
+type ContentService struct {
+        DB *mongo.Database
+}
+
+func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request)       {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request)      {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package utils
 
 import (
         "context"
         "fmt"
         "os"
 
-        "github.com/joho/godotenv"
         "go.mongodb.org/mongo-driver/mongo"
         "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectToDB(pathToEnv string) (*mongo.Client, error) <span class="cov8" title="1">{
-        err := godotenv.Load(pathToEnv)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
-        }
-        <span class="cov8" title="1">uri := os.Getenv("DB_URI")
+func ConnectToDB() (*mongo.Client, error) <span class="cov8" title="1">{
+        uri := os.Getenv("YAN_CMS_DB_URI")
         if uri == "" </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("set your 'DB_URI' environment variable")
+                return nil, fmt.Errorf("set your 'YAN_CMS_DB_URI' environment variable")
         }</span>
 
         <span class="cov8" title="1">client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
@@ -457,7 +496,7 @@ func ConnectToDB(pathToEnv string) (*mongo.Client, error) <span class="cov8" tit
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package utils
+		<pre class="file" id="file8" style="display: none">package utils
 
 import (
         "encoding/json"
