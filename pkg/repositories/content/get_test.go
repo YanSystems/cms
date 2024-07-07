@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/YanSystems/cms/pkg/models"
-	utils "github.com/YanSystems/cms/pkg/utils/db"
+	utils "github.com/YanSystems/cms/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )

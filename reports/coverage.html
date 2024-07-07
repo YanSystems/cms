@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/YanSystems/cms/cmd/api/api.go (78.3%)</option>
+				<option value="file0">github.com/YanSystems/cms/cmd/api/api.go (77.4%)</option>
 				
 				<option value="file1">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
 				
@@ -88,12 +88,14 @@
 		<pre class="file" id="file0" style="display: none">package main
 
 import (
+        "context"
         "fmt"
         "log"
         "log/slog"
         "net/http"
 
         "github.com/YanSystems/cms/pkg/services"
+        utils "github.com/YanSystems/cms/pkg/utils/db"
         "github.com/go-chi/chi/v5"
         "github.com/go-chi/cors"
         "go.mongodb.org/mongo-driver/mongo"
@@ -138,14 +140,28 @@ func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
 }
 
 func (s *Server) NewServer() *http.Server <span class="cov8" title="1">{
+        client, err := utils.ConnectToDB()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err)
+        }</span>
+
+        <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                if err := client.Disconnect(context.TODO()); err != nil </span><span class="cov0" title="0">{
+                        panic(err)</span>
+                }
+        }()
+
+        <span class="cov8" title="1">s.Port = "8000"
+        s.DB = client.Database("content")
+
         router := s.NewRouter()
         server := &amp;http.Server{
                 Addr:    fmt.Sprintf(":%s", s.Port),
                 Handler: router,
         }
 
-        return server
-}</span>
+        return server</span>
+}
 
 func (s *Server) Run(server *http.Server) <span class="cov0" title="0">{
         slog.Info(fmt.Sprintf("The server is now live on port %s", s.Port))
@@ -160,33 +176,11 @@ func (s *Server) Run(server *http.Server) <span class="cov0" title="0">{
 		
 		<pre class="file" id="file1" style="display: none">package main
 
-import (
-        "context"
-        "log"
-
-        utils "github.com/YanSystems/cms/pkg/utils/db"
-)
-
 func main() <span class="cov0" title="0">{
-        client, err := utils.ConnectToDB()
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatal(err)
-        }</span>
-
-        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
-                if err := client.Disconnect(context.TODO()); err != nil </span><span class="cov0" title="0">{
-                        panic(err)</span>
-                }
-        }()
-
-        <span class="cov0" title="0">api := Server{
-                Port: "8000",
-                DB:   client.Database("content"),
-        }
-
+        api := Server{}
         server := api.NewServer()
-        api.Run(server)</span>
-}
+        api.Run(server)
+}</span>
 </pre>
 		
 		<pre class="file" id="file2" style="display: none">package repositories

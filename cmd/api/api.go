@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 
 	"github.com/YanSystems/cms/pkg/services"
+	utils "github.com/YanSystems/cms/pkg/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -51,6 +53,20 @@ func (s *Server) NewRouter() http.Handler {
 }
 
 func (s *Server) NewServer() *http.Server {
+	client, err := utils.ConnectToDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
+	s.Port = "8000"
+	s.DB = client.Database("content")
+
 	router := s.NewRouter()
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", s.Port),
