@@ -10,6 +10,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      YAN_CMS_DB_URI: ${{ secrets.YAN_CMS_DB_URI }}
+
     steps:
     - uses: actions/checkout@v4
 
