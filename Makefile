@@ -11,7 +11,7 @@ run:
 
 test:
 	@echo "$(BOLD)$(AQUA)YAN >$(RESET)$(YELLOW) Running test cases for ${APP_NAME} microservice...$(RESET)"
-	@exec go test -coverprofile=reports/coverage.out ./...
+	@exec go test -v -coverprofile=reports/coverage.out ./...
 
 cov: test
 	@echo "$(BOLD)$(AQUA)YAN >$(RESET)$(YELLOW) Creating test coverage report for ${APP_NAME} microservice...$(RESET)"

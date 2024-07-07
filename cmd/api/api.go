@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/YanSystems/cms/pkg/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +35,17 @@ func (s *Server) NewRouter() http.Handler {
 		w.Write([]byte("OK"))
 	})
 
+	contentService := services.ContentService{DB: s.DB}
+
 	// Content services
+	router.Post("/contents/{collection}", contentService.HandleCreateContent)
+	router.Get("/contents/{collection}", contentService.HandleGetCollection)
+	router.Get("/contents/{collection}/id/{id}", contentService.HandleGetContent)
+	router.Get("/contents/{collection}/class/{class}", contentService.HandleGetClass)
+	router.Put("/contents/{collection}/id/{id}", contentService.HandleUpdateContent)
+	router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
+	router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
+	router.Delete("/contnets/{collection}/class/{class}", contentService.HandleDeleteClass)
 
 	return router
 }
