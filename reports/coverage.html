@@ -55,9 +55,9 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/YanSystems/cms/cmd/api/api.go (77.4%)</option>
+				<option value="file0">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
+				<option value="file1">github.com/YanSystems/cms/pkg/api/server.go (77.4%)</option>
 				
 				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/delete.go (88.0%)</option>
 				
@@ -67,11 +67,11 @@
 				
 				<option value="file5">github.com/YanSystems/cms/pkg/repositories/content/put.go (95.7%)</option>
 				
-				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (0.0%)</option>
+				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (73.9%)</option>
 				
-				<option value="file7">github.com/YanSystems/cms/pkg/utils/db/db.go (71.4%)</option>
+				<option value="file7">github.com/YanSystems/cms/pkg/utils/db.go (0.0%)</option>
 				
-				<option value="file8">github.com/YanSystems/cms/pkg/utils/json/json.go (100.0%)</option>
+				<option value="file8">github.com/YanSystems/cms/pkg/utils/json.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -88,6 +88,19 @@
 		<pre class="file" id="file0" style="display: none">package main
 
 import (
+        api "github.com/YanSystems/cms/pkg/api"
+)
+
+func main() <span class="cov0" title="0">{
+        api := api.Server{}
+        server := api.NewServer()
+        api.Run(server)
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package api
+
+import (
         "context"
         "fmt"
         "log"
@@ -95,7 +108,7 @@ import (
         "net/http"
 
         "github.com/YanSystems/cms/pkg/services"
-        utils "github.com/YanSystems/cms/pkg/utils/db"
+        utils "github.com/YanSystems/cms/pkg/utils"
         "github.com/go-chi/chi/v5"
         "github.com/go-chi/cors"
         "go.mongodb.org/mongo-driver/mongo"
@@ -172,15 +185,6 @@ func (s *Server) Run(server *http.Server) <span class="cov0" title="0">{
                 return
         }</span>
 }
-</pre>
-		
-		<pre class="file" id="file1" style="display: none">package main
-
-func main() <span class="cov0" title="0">{
-        api := Server{}
-        server := api.NewServer()
-        api.Run(server)
-}</span>
 </pre>
 		
 		<pre class="file" id="file2" style="display: none">package repositories
@@ -445,8 +449,16 @@ func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent
 		<pre class="file" id="file6" style="display: none">package services
 
 import (
+        "errors"
+        "log/slog"
         "net/http"
+        "time"
 
+        "github.com/YanSystems/cms/pkg/models"
+        repositories "github.com/YanSystems/cms/pkg/repositories/content"
+        "github.com/YanSystems/cms/pkg/utils"
+        "github.com/go-chi/chi/v5"
+        "github.com/google/uuid"
         "go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -454,7 +466,45 @@ type ContentService struct {
         DB *mongo.Database
 }
 
-func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        coll := chi.URLParam(r, "collection")
+
+        var c models.Content
+        err := utils.ReadJSON(w, r, &amp;c)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to read JSON request", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">c.Id = uuid.New().String()
+        c.UpdatedAt = time.Now().UTC()
+        c.CreatedAt = time.Now().UTC()
+
+        if c.Class == "" || c.Title == "" || c.Description == "" || c.Body == "" || c.Views &lt; 0 || c.CreatorId == "" </span><span class="cov8" title="1">{
+                err := errors.New("missing fields in request payload")
+                slog.Error("Validation error", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">repo := repositories.ContentRepository{DB: s.DB}
+        id, err := repo.CreateContent(coll, &amp;c)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to create content", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully created content",
+                Data:    id,
+        }
+
+        utils.WriteJSON(w, http.StatusCreated, responsePayload)</span>
+}
+
 func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request)       {<span class="cov0" title="0">}</span>
 func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
 func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {<span class="cov0" title="0">}</span>
@@ -475,18 +525,18 @@ import (
         "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectToDB() (*mongo.Client, error) <span class="cov8" title="1">{
+func ConnectToDB() (*mongo.Client, error) <span class="cov0" title="0">{
         uri := os.Getenv("YAN_CMS_DB_URI")
         if uri == "" </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("set your 'YAN_CMS_DB_URI' environment variable")
         }</span>
 
-        <span class="cov8" title="1">client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+        <span class="cov0" title="0">client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">return client, nil</span>
+        <span class="cov0" title="0">return client, nil</span>
 }
 </pre>
 		
@@ -497,13 +547,9 @@ import (
         "errors"
         "io"
         "net/http"
-)
 
-type JsonResponse struct {
-        Error   bool   `json:"error"`
-        Message string `json:"message"`
-        Data    any    `json:"data,omitempty"`
-}
+        "github.com/YanSystems/cms/pkg/models"
+)
 
 func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error <span class="cov8" title="1">{
         maxBytes := 1048576 // one megabyte
@@ -553,7 +599,7 @@ func ErrorJSON(w http.ResponseWriter, err error, status ...int) error <span clas
                 statusCode = status[0]
         }</span>
 
-        <span class="cov8" title="1">var payload JsonResponse
+        <span class="cov8" title="1">var payload models.JsonResponse
         payload.Error = true
         payload.Message = err.Error()
 

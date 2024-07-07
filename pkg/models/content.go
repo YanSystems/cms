@@ -28,3 +28,9 @@ type UpdateContent struct {
 	UpdatedAt   *time.Time `bson:"updated_at" json:"updated_at,omitempty"`
 	CreatedAt   *time.Time `bson:"created_at" json:"created_at,omitempty"`
 }
+
+type JsonResponse struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
+}

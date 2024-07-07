@@ -5,13 +5,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
-)
 
-type JsonResponse struct {
-	Error   bool   `json:"error"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-}
+	"github.com/YanSystems/cms/pkg/models"
+)
 
 func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	maxBytes := 1048576 // one megabyte
@@ -61,7 +57,7 @@ func ErrorJSON(w http.ResponseWriter, err error, status ...int) error {
 		statusCode = status[0]
 	}
 
-	var payload JsonResponse
+	var payload models.JsonResponse
 	payload.Error = true
 	payload.Message = err.Error()
 
