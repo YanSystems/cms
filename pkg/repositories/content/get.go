@@ -10,12 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (r *ContentRepository) GetContent(coll string, id string) (*models.Content, error) {
+func (r *ContentRepository) GetContent(coll string, id string) (*models.ReadContent, error) {
 	if r.DB == nil {
 		return nil, errors.New("database connection is nil")
 	}
 
-	var content models.Content
+	var content models.ReadContent
 
 	err := r.DB.Collection(coll).FindOne(
 		context.TODO(),

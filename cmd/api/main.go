@@ -1,7 +1,7 @@
 package main
 
 import (
-	api "github.com/YanSystems/cms/pkg/api"
+	api "github.com/YanSystems/cms/pkg/server"
 )
 
 func main() {

@@ -57,7 +57,27 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
 	utils.WriteJSON(w, http.StatusCreated, responsePayload)
 }
 
-func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request)       {}
+func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+	id := chi.URLParam(r, "id")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	content, err := repo.GetContent(coll, id)
+	if err != nil {
+		slog.Error("Failed to get content", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully retrieved content",
+		Data:    content,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+
 func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {}
 func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {}
 func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request)    {}

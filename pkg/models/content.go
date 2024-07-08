@@ -4,6 +4,19 @@ import (
 	"time"
 )
 
+type ReadContent struct {
+	Id          string    `bson:"id" json:"id" validate:"required,uuid"`
+	Class       string    `bson:"class" json:"class" validate:"required"`
+	Title       string    `bson:"title" json:"title"`
+	Description string    `bson:"description" json:"description"`
+	Body        string    `bson:"body" json:"body"`
+	IsPublic    bool      `bson:"is_public" json:"is_public"`
+	Views       int       `bson:"views" json:"views" validate:"gte=0"`
+	CreatorId   string    `bson:"creator_id" json:"creator_id" validate:"required,uuid"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at" validate:"required"`
+	CreatedAt   time.Time `bson:"created_at" json:"created_at" validate:"required"`
+}
+
 type Content struct {
 	Id          string    `bson:"id" json:"id,omitempty" validate:"required,uuid"`
 	Class       string    `bson:"class" json:"class,omitempty" validate:"required"`

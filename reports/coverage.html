@@ -57,17 +57,17 @@
 				
 				<option value="file0">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/YanSystems/cms/pkg/api/server.go (77.4%)</option>
+				<option value="file1">github.com/YanSystems/cms/pkg/repositories/content/delete.go (88.0%)</option>
 				
-				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/delete.go (88.0%)</option>
+				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/get.go (89.7%)</option>
 				
-				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/get.go (89.7%)</option>
+				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/post.go (94.7%)</option>
 				
-				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/post.go (94.7%)</option>
+				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/put.go (95.7%)</option>
 				
-				<option value="file5">github.com/YanSystems/cms/pkg/repositories/content/put.go (95.7%)</option>
+				<option value="file5">github.com/YanSystems/cms/pkg/server/server.go (77.4%)</option>
 				
-				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (73.9%)</option>
+				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (30.3%)</option>
 				
 				<option value="file7">github.com/YanSystems/cms/pkg/utils/db.go (0.0%)</option>
 				
@@ -88,7 +88,7 @@
 		<pre class="file" id="file0" style="display: none">package main
 
 import (
-        api "github.com/YanSystems/cms/pkg/api"
+        api "github.com/YanSystems/cms/pkg/server"
 )
 
 func main() <span class="cov0" title="0">{
@@ -98,7 +98,266 @@ func main() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package api
+		<pre class="file" id="file1" style="display: none">package repositories
+
+import (
+        "context"
+
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+func (r *ContentRepository) DeleteContent(coll string, id string) (string, error) <span class="cov8" title="1">{
+        _, err := r.DB.Collection(coll).DeleteOne(
+                context.TODO(),
+                bson.D{{Key: "id", Value: id}},
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return id, nil</span>
+}
+
+func (r *ContentRepository) DeleteClass(coll string, class string) ([]string, error) <span class="cov8" title="1">{
+        contents, err := r.GetClass(coll, class)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var ids []string
+        for _, content := range contents </span><span class="cov8" title="1">{
+                ids = append(ids, content.Id)
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.DB.Collection(coll).DeleteMany(
+                context.TODO(),
+                bson.D{{Key: "class", Value: class}},
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ids, nil</span>
+}
+
+func (r *ContentRepository) DeleteCollection(coll string) ([]string, error) <span class="cov8" title="1">{
+
+        contents, err := r.GetCollection(coll)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var ids []string
+        for _, content := range contents </span><span class="cov8" title="1">{
+                r.DeleteContent(coll, content.Id)
+                ids = append(ids, content.Id)
+        }</span>
+
+        <span class="cov8" title="1">err = r.DB.Collection(coll).Drop(context.TODO())
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ids, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package repositories
+
+import (
+        "context"
+        "errors"
+        "fmt"
+
+        "github.com/YanSystems/cms/pkg/models"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/mongo"
+)
+
+func (r *ContentRepository) GetContent(coll string, id string) (*models.ReadContent, error) <span class="cov8" title="1">{
+        if r.DB == nil </span><span class="cov8" title="1">{
+                return nil, errors.New("database connection is nil")
+        }</span>
+
+        <span class="cov8" title="1">var content models.ReadContent
+
+        err := r.DB.Collection(coll).FindOne(
+                context.TODO(),
+                bson.D{{Key: "id", Value: id}},
+        ).Decode(&amp;content)
+
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
+                        return nil, errors.New("content not found")
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">return &amp;content, nil</span>
+}
+
+func (r *ContentRepository) GetCollection(coll string) ([]models.Content, error) <span class="cov8" title="1">{
+        results, err := r.DB.Collection(coll).Find(
+                context.TODO(),
+                bson.D{},
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var contents []models.Content
+        err = results.All(context.TODO(), &amp;contents)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
+        }</span>
+
+        <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
+                return []models.Content{}, nil
+        }</span>
+
+        <span class="cov8" title="1">return contents, nil</span>
+}
+
+func (r *ContentRepository) GetClass(coll string, class string) ([]models.Content, error) <span class="cov8" title="1">{
+        results, err := r.DB.Collection(coll).Find(
+                context.TODO(),
+                bson.D{{Key: "class", Value: class}},
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var contents []models.Content
+        err = results.All(context.TODO(), &amp;contents)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
+        }</span>
+
+        <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
+                return []models.Content{}, nil
+        }</span>
+
+        <span class="cov8" title="1">return contents, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package repositories
+
+import (
+        "context"
+        "errors"
+        "fmt"
+
+        "github.com/YanSystems/cms/pkg/models"
+        "github.com/go-playground/validator/v10"
+        "github.com/google/uuid"
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+func (r *ContentRepository) CreateContent(coll string, content *models.Content) (string, error) <span class="cov8" title="1">{
+        if err := validateContent(content); err != nil </span><span class="cov8" title="1">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">var existingContent models.Content
+        err := r.DB.Collection(coll).FindOne(context.TODO(), bson.M{"id": content.Id}).Decode(&amp;existingContent)
+        if err == nil </span><span class="cov8" title="1">{
+                return "", errors.New("content with this ID already exists")
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.DB.Collection(coll).InsertOne(
+                context.TODO(),
+                content,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return content.Id, nil</span>
+}
+
+func validateUUID(fl validator.FieldLevel) bool <span class="cov8" title="1">{
+        _, err := uuid.Parse(fl.Field().String())
+        return err == nil
+}</span>
+
+func validateContent(content *models.Content) error <span class="cov8" title="1">{
+        validate := validator.New()
+        validate.RegisterValidation("uuid", validateUUID)
+        err := validate.Struct(content)
+        if err != nil </span><span class="cov8" title="1">{
+                for _, err := range err.(validator.ValidationErrors) </span><span class="cov8" title="1">{
+                        return fmt.Errorf("field %s is not valid: %v", err.StructField(), err)
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package repositories
+
+import (
+        "context"
+        "time"
+
+        "github.com/YanSystems/cms/pkg/models"
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent *models.UpdateContent) (string, error) <span class="cov8" title="1">{
+        // Fetch the current content from the database
+        currentContent, err := r.GetContent(coll, id)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", err
+        }</span>
+
+        // Update fields only if they are set in updatedContent
+        <span class="cov8" title="1">if updatedContent.Class != nil </span><span class="cov8" title="1">{
+                currentContent.Class = *updatedContent.Class
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Title != nil </span><span class="cov8" title="1">{
+                currentContent.Title = *updatedContent.Title
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Description != nil </span><span class="cov8" title="1">{
+                currentContent.Description = *updatedContent.Description
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Body != nil </span><span class="cov8" title="1">{
+                currentContent.Body = *updatedContent.Body
+        }</span>
+        <span class="cov8" title="1">if updatedContent.Views != nil </span><span class="cov8" title="1">{
+                currentContent.Views = *updatedContent.Views
+        }</span>
+        <span class="cov8" title="1">if updatedContent.CreatorId != nil </span><span class="cov8" title="1">{
+                currentContent.CreatorId = *updatedContent.CreatorId
+        }</span>
+        <span class="cov8" title="1">if updatedContent.IsPublic != nil </span><span class="cov8" title="1">{
+                currentContent.IsPublic = *updatedContent.IsPublic
+        }</span>
+
+        // Always update UpdatedAt to the current time
+        <span class="cov8" title="1">currentContent.UpdatedAt = time.Now().UTC()
+
+        // Ensure CreatedAt is never updated
+        updatedContent.CreatedAt = &amp;currentContent.CreatedAt
+
+        // Update the document in the database
+        _, err = r.DB.Collection(coll).UpdateOne(
+                context.TODO(),
+                bson.D{{Key: "id", Value: id}},
+                bson.D{{Key: "$set", Value: currentContent}},
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return id, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package server
 
 import (
         "context"
@@ -187,265 +446,6 @@ func (s *Server) Run(server *http.Server) <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package repositories
-
-import (
-        "context"
-
-        "go.mongodb.org/mongo-driver/bson"
-)
-
-func (r *ContentRepository) DeleteContent(coll string, id string) (string, error) <span class="cov8" title="1">{
-        _, err := r.DB.Collection(coll).DeleteOne(
-                context.TODO(),
-                bson.D{{Key: "id", Value: id}},
-        )
-
-        if err != nil </span><span class="cov0" title="0">{
-                return "", err
-        }</span>
-
-        <span class="cov8" title="1">return id, nil</span>
-}
-
-func (r *ContentRepository) DeleteClass(coll string, class string) ([]string, error) <span class="cov8" title="1">{
-        contents, err := r.GetClass(coll, class)
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">var ids []string
-        for _, content := range contents </span><span class="cov8" title="1">{
-                ids = append(ids, content.Id)
-        }</span>
-
-        <span class="cov8" title="1">_, err = r.DB.Collection(coll).DeleteMany(
-                context.TODO(),
-                bson.D{{Key: "class", Value: class}},
-        )
-
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">return ids, nil</span>
-}
-
-func (r *ContentRepository) DeleteCollection(coll string) ([]string, error) <span class="cov8" title="1">{
-
-        contents, err := r.GetCollection(coll)
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">var ids []string
-        for _, content := range contents </span><span class="cov8" title="1">{
-                r.DeleteContent(coll, content.Id)
-                ids = append(ids, content.Id)
-        }</span>
-
-        <span class="cov8" title="1">err = r.DB.Collection(coll).Drop(context.TODO())
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">return ids, nil</span>
-}
-</pre>
-		
-		<pre class="file" id="file3" style="display: none">package repositories
-
-import (
-        "context"
-        "errors"
-        "fmt"
-
-        "github.com/YanSystems/cms/pkg/models"
-        "go.mongodb.org/mongo-driver/bson"
-        "go.mongodb.org/mongo-driver/mongo"
-)
-
-func (r *ContentRepository) GetContent(coll string, id string) (*models.Content, error) <span class="cov8" title="1">{
-        if r.DB == nil </span><span class="cov8" title="1">{
-                return nil, errors.New("database connection is nil")
-        }</span>
-
-        <span class="cov8" title="1">var content models.Content
-
-        err := r.DB.Collection(coll).FindOne(
-                context.TODO(),
-                bson.D{{Key: "id", Value: id}},
-        ).Decode(&amp;content)
-
-        if err != nil </span><span class="cov8" title="1">{
-                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
-                        return nil, errors.New("content not found")
-                }</span>
-                <span class="cov0" title="0">return nil, err</span>
-        }
-
-        <span class="cov8" title="1">return &amp;content, nil</span>
-}
-
-func (r *ContentRepository) GetCollection(coll string) ([]models.Content, error) <span class="cov8" title="1">{
-        results, err := r.DB.Collection(coll).Find(
-                context.TODO(),
-                bson.D{},
-        )
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">var contents []models.Content
-        err = results.All(context.TODO(), &amp;contents)
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
-        }</span>
-
-        <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
-                return []models.Content{}, nil
-        }</span>
-
-        <span class="cov8" title="1">return contents, nil</span>
-}
-
-func (r *ContentRepository) GetClass(coll string, class string) ([]models.Content, error) <span class="cov8" title="1">{
-        results, err := r.DB.Collection(coll).Find(
-                context.TODO(),
-                bson.D{{Key: "class", Value: class}},
-        )
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-
-        <span class="cov8" title="1">var contents []models.Content
-        err = results.All(context.TODO(), &amp;contents)
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
-        }</span>
-
-        <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
-                return []models.Content{}, nil
-        }</span>
-
-        <span class="cov8" title="1">return contents, nil</span>
-}
-</pre>
-		
-		<pre class="file" id="file4" style="display: none">package repositories
-
-import (
-        "context"
-        "errors"
-        "fmt"
-
-        "github.com/YanSystems/cms/pkg/models"
-        "github.com/go-playground/validator/v10"
-        "github.com/google/uuid"
-        "go.mongodb.org/mongo-driver/bson"
-)
-
-func (r *ContentRepository) CreateContent(coll string, content *models.Content) (string, error) <span class="cov8" title="1">{
-        if err := validateContent(content); err != nil </span><span class="cov8" title="1">{
-                return "", err
-        }</span>
-
-        <span class="cov8" title="1">var existingContent models.Content
-        err := r.DB.Collection(coll).FindOne(context.TODO(), bson.M{"id": content.Id}).Decode(&amp;existingContent)
-        if err == nil </span><span class="cov8" title="1">{
-                return "", errors.New("content with this ID already exists")
-        }</span>
-
-        <span class="cov8" title="1">_, err = r.DB.Collection(coll).InsertOne(
-                context.TODO(),
-                content,
-        )
-        if err != nil </span><span class="cov0" title="0">{
-                return "", err
-        }</span>
-
-        <span class="cov8" title="1">return content.Id, nil</span>
-}
-
-func validateUUID(fl validator.FieldLevel) bool <span class="cov8" title="1">{
-        _, err := uuid.Parse(fl.Field().String())
-        return err == nil
-}</span>
-
-func validateContent(content *models.Content) error <span class="cov8" title="1">{
-        validate := validator.New()
-        validate.RegisterValidation("uuid", validateUUID)
-        err := validate.Struct(content)
-        if err != nil </span><span class="cov8" title="1">{
-                for _, err := range err.(validator.ValidationErrors) </span><span class="cov8" title="1">{
-                        return fmt.Errorf("field %s is not valid: %v", err.StructField(), err)
-                }</span>
-        }
-        <span class="cov8" title="1">return nil</span>
-}
-</pre>
-		
-		<pre class="file" id="file5" style="display: none">package repositories
-
-import (
-        "context"
-        "time"
-
-        "github.com/YanSystems/cms/pkg/models"
-        "go.mongodb.org/mongo-driver/bson"
-)
-
-func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent *models.UpdateContent) (string, error) <span class="cov8" title="1">{
-        // Fetch the current content from the database
-        currentContent, err := r.GetContent(coll, id)
-        if err != nil </span><span class="cov8" title="1">{
-                return "", err
-        }</span>
-
-        // Update fields only if they are set in updatedContent
-        <span class="cov8" title="1">if updatedContent.Class != nil </span><span class="cov8" title="1">{
-                currentContent.Class = *updatedContent.Class
-        }</span>
-        <span class="cov8" title="1">if updatedContent.Title != nil </span><span class="cov8" title="1">{
-                currentContent.Title = *updatedContent.Title
-        }</span>
-        <span class="cov8" title="1">if updatedContent.Description != nil </span><span class="cov8" title="1">{
-                currentContent.Description = *updatedContent.Description
-        }</span>
-        <span class="cov8" title="1">if updatedContent.Body != nil </span><span class="cov8" title="1">{
-                currentContent.Body = *updatedContent.Body
-        }</span>
-        <span class="cov8" title="1">if updatedContent.Views != nil </span><span class="cov8" title="1">{
-                currentContent.Views = *updatedContent.Views
-        }</span>
-        <span class="cov8" title="1">if updatedContent.CreatorId != nil </span><span class="cov8" title="1">{
-                currentContent.CreatorId = *updatedContent.CreatorId
-        }</span>
-        <span class="cov8" title="1">if updatedContent.IsPublic != nil </span><span class="cov8" title="1">{
-                currentContent.IsPublic = *updatedContent.IsPublic
-        }</span>
-
-        // Always update UpdatedAt to the current time
-        <span class="cov8" title="1">currentContent.UpdatedAt = time.Now().UTC()
-
-        // Ensure CreatedAt is never updated
-        updatedContent.CreatedAt = &amp;currentContent.CreatedAt
-
-        // Update the document in the database
-        _, err = r.DB.Collection(coll).UpdateOne(
-                context.TODO(),
-                bson.D{{Key: "id", Value: id}},
-                bson.D{{Key: "$set", Value: currentContent}},
-        )
-
-        if err != nil </span><span class="cov0" title="0">{
-                return "", err
-        }</span>
-
-        <span class="cov8" title="1">return id, nil</span>
-}
-</pre>
-		
 		<pre class="file" id="file6" style="display: none">package services
 
 import (
@@ -466,7 +466,7 @@ type ContentService struct {
         DB *mongo.Database
 }
 
-func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
         coll := chi.URLParam(r, "collection")
 
         var c models.Content
@@ -477,18 +477,18 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
                 return
         }</span>
 
-        <span class="cov8" title="1">c.Id = uuid.New().String()
+        <span class="cov0" title="0">c.Id = uuid.New().String()
         c.UpdatedAt = time.Now().UTC()
         c.CreatedAt = time.Now().UTC()
 
-        if c.Class == "" || c.Title == "" || c.Description == "" || c.Body == "" || c.Views &lt; 0 || c.CreatorId == "" </span><span class="cov8" title="1">{
+        if c.Class == "" || c.Title == "" || c.Description == "" || c.Body == "" || c.Views &lt; 0 || c.CreatorId == "" </span><span class="cov0" title="0">{
                 err := errors.New("missing fields in request payload")
                 slog.Error("Validation error", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
 
-        <span class="cov8" title="1">repo := repositories.ContentRepository{DB: s.DB}
+        <span class="cov0" title="0">repo := repositories.ContentRepository{DB: s.DB}
         id, err := repo.CreateContent(coll, &amp;c)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to create content", "error", err)
@@ -496,7 +496,7 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
                 return
         }</span>
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        <span class="cov0" title="0">responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully created content",
                 Data:    id,
@@ -505,7 +505,27 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
         utils.WriteJSON(w, http.StatusCreated, responsePayload)</span>
 }
 
-func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request)       {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        coll := chi.URLParam(r, "collection")
+        id := chi.URLParam(r, "id")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        content, err := repo.GetContent(coll, id)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to get content", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully retrieved content",
+                Data:    content,
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+
 func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
 func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {<span class="cov0" title="0">}</span>
 func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
