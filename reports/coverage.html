@@ -57,19 +57,19 @@
 				
 				<option value="file0">github.com/YanSystems/cms/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/YanSystems/cms/pkg/repositories/content/delete.go (88.0%)</option>
+				<option value="file1">github.com/YanSystems/cms/pkg/repositories/content/delete.go (84.2%)</option>
 				
-				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/get.go (89.7%)</option>
+				<option value="file2">github.com/YanSystems/cms/pkg/repositories/content/get.go (83.3%)</option>
 				
-				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/post.go (94.7%)</option>
+				<option value="file3">github.com/YanSystems/cms/pkg/repositories/content/post.go (93.5%)</option>
 				
-				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/put.go (95.7%)</option>
+				<option value="file4">github.com/YanSystems/cms/pkg/repositories/content/put.go (94.4%)</option>
 				
-				<option value="file5">github.com/YanSystems/cms/pkg/server/server.go (77.4%)</option>
+				<option value="file5">github.com/YanSystems/cms/pkg/server/server.go (76.7%)</option>
 				
-				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (72.2%)</option>
+				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (81.9%)</option>
 				
-				<option value="file7">github.com/YanSystems/cms/pkg/utils/db.go (0.0%)</option>
+				<option value="file7">github.com/YanSystems/cms/pkg/utils/db.go (84.6%)</option>
 				
 				<option value="file8">github.com/YanSystems/cms/pkg/utils/json.go (100.0%)</option>
 				
@@ -102,26 +102,34 @@ func main() <span class="cov0" title="0">{
 
 import (
         "context"
+        "log/slog"
 
         "go.mongodb.org/mongo-driver/bson"
 )
 
 func (r *ContentRepository) DeleteContent(coll string, id string) (string, error) <span class="cov8" title="1">{
+        slog.Debug("DeleteContent called", "collection", coll, "id", id)
+
         _, err := r.DB.Collection(coll).DeleteOne(
                 context.TODO(),
                 bson.D{{Key: "id", Value: id}},
         )
 
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to delete content", "collection", coll, "id", id, "error", err)
                 return "", err
         }</span>
 
-        <span class="cov8" title="1">return id, nil</span>
+        <span class="cov8" title="1">slog.Info("Content deleted successfully", "collection", coll, "id", id)
+        return id, nil</span>
 }
 
 func (r *ContentRepository) DeleteClass(coll string, class string) ([]string, error) <span class="cov8" title="1">{
+        slog.Debug("DeleteClass called", "collection", coll, "class", class)
+
         contents, err := r.GetClass(coll, class)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to get class contents", "collection", coll, "class", class, "error", err)
                 return nil, err
         }</span>
 
@@ -129,23 +137,28 @@ func (r *ContentRepository) DeleteClass(coll string, class string) ([]string, er
         for _, content := range contents </span><span class="cov8" title="1">{
                 ids = append(ids, content.Id)
         }</span>
+        <span class="cov8" title="1">slog.Debug("Class contents to be deleted", "collection", coll, "class", class, "ids", ids)
 
-        <span class="cov8" title="1">_, err = r.DB.Collection(coll).DeleteMany(
+        _, err = r.DB.Collection(coll).DeleteMany(
                 context.TODO(),
                 bson.D{{Key: "class", Value: class}},
         )
 
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to delete class contents", "collection", coll, "class", class, "error", err)
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">return ids, nil</span>
+        <span class="cov8" title="1">slog.Info("Class contents deleted successfully", "collection", coll, "class", class)
+        return ids, nil</span>
 }
 
 func (r *ContentRepository) DeleteCollection(coll string) ([]string, error) <span class="cov8" title="1">{
+        slog.Debug("DeleteCollection called", "collection", coll)
 
         contents, err := r.GetCollection(coll)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to get collection contents", "collection", coll, "error", err)
                 return nil, err
         }</span>
 
@@ -154,13 +167,16 @@ func (r *ContentRepository) DeleteCollection(coll string) ([]string, error) <spa
                 r.DeleteContent(coll, content.Id)
                 ids = append(ids, content.Id)
         }</span>
+        <span class="cov8" title="1">slog.Debug("Collection contents to be deleted", "collection", coll, "ids", ids)
 
-        <span class="cov8" title="1">err = r.DB.Collection(coll).Drop(context.TODO())
+        err = r.DB.Collection(coll).Drop(context.TODO())
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to drop collection", "collection", coll, "error", err)
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">return ids, nil</span>
+        <span class="cov8" title="1">slog.Info("Collection dropped successfully", "collection", coll)
+        return ids, nil</span>
 }
 </pre>
 		
@@ -170,6 +186,7 @@ import (
         "context"
         "errors"
         "fmt"
+        "log/slog"
 
         "github.com/YanSystems/cms/pkg/models"
         "go.mongodb.org/mongo-driver/bson"
@@ -177,8 +194,11 @@ import (
 )
 
 func (r *ContentRepository) GetContent(coll string, id string) (*models.ReadContent, error) <span class="cov8" title="1">{
+        slog.Debug("GetContent called", "collection", coll, "id", id)
         if r.DB == nil </span><span class="cov8" title="1">{
-                return nil, errors.New("database connection is nil")
+                err := errors.New("database connection is nil")
+                slog.Error("Database connection is nil", "error", err)
+                return nil, err
         }</span>
 
         <span class="cov8" title="1">var content models.ReadContent
@@ -190,56 +210,74 @@ func (r *ContentRepository) GetContent(coll string, id string) (*models.ReadCont
 
         if err != nil </span><span class="cov8" title="1">{
                 if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
-                        return nil, errors.New("content not found")
+                        err := errors.New("content not found")
+                        slog.Error("Content not found", "collection", coll, "id", id, "error", err)
+                        return nil, err
                 }</span>
-                <span class="cov0" title="0">return nil, err</span>
+                <span class="cov0" title="0">slog.Error("Failed to find content", "collection", coll, "id", id, "error", err)
+                return nil, err</span>
         }
 
-        <span class="cov8" title="1">return &amp;content, nil</span>
+        <span class="cov8" title="1">slog.Info("Content retrieved successfully", "content", content)
+        return &amp;content, nil</span>
 }
 
 func (r *ContentRepository) GetCollection(coll string) ([]models.Content, error) <span class="cov8" title="1">{
+        slog.Debug("GetCollection called", "collection", coll)
+
         results, err := r.DB.Collection(coll).Find(
                 context.TODO(),
                 bson.D{},
         )
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to find collection", "collection", coll, "error", err)
                 return nil, err
         }</span>
 
         <span class="cov8" title="1">var contents []models.Content
         err = results.All(context.TODO(), &amp;contents)
         if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
+                err := fmt.Errorf("failed to decode results: %s", err.Error())
+                slog.Error("Failed to decode results", "collection", coll, "error", err)
+                return nil, err
         }</span>
 
         <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
+                slog.Info("No contents found in collection", "collection", coll)
                 return []models.Content{}, nil
         }</span>
 
-        <span class="cov8" title="1">return contents, nil</span>
+        <span class="cov8" title="1">slog.Info("Collection retrieved successfully", "collection", coll, "contents", contents)
+        return contents, nil</span>
 }
 
 func (r *ContentRepository) GetClass(coll string, class string) ([]models.Content, error) <span class="cov8" title="1">{
+        slog.Debug("GetClass called", "collection", coll, "class", class)
+
         results, err := r.DB.Collection(coll).Find(
                 context.TODO(),
                 bson.D{{Key: "class", Value: class}},
         )
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to find class contents", "collection", coll, "class", class, "error", err)
                 return nil, err
         }</span>
 
         <span class="cov8" title="1">var contents []models.Content
         err = results.All(context.TODO(), &amp;contents)
         if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("failed to decode results: %s", err.Error())
+                err := fmt.Errorf("failed to decode results: %s", err.Error())
+                slog.Error("Failed to decode class contents", "collection", coll, "class", class, "error", err)
+                return nil, err
         }</span>
 
         <span class="cov8" title="1">if len(contents) == 0 </span><span class="cov8" title="1">{
+                slog.Info("No contents found for class", "collection", coll, "class", class)
                 return []models.Content{}, nil
         }</span>
 
-        <span class="cov8" title="1">return contents, nil</span>
+        <span class="cov8" title="1">slog.Info("Class contents retrieved successfully", "collection", coll, "class", class, "contents", contents)
+        return contents, nil</span>
 }
 </pre>
 		
@@ -249,6 +287,7 @@ import (
         "context"
         "errors"
         "fmt"
+        "log/slog"
 
         "github.com/YanSystems/cms/pkg/models"
         "github.com/go-playground/validator/v10"
@@ -257,25 +296,34 @@ import (
 )
 
 func (r *ContentRepository) CreateContent(coll string, content *models.Content) (string, error) <span class="cov8" title="1">{
+        slog.Debug("CreateContent called", "collection", coll, "contentID", content.Id)
+
         if err := validateContent(content); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Content validation failed", "error", err)
                 return "", err
         }</span>
+        <span class="cov8" title="1">slog.Info("Content validation passed", "contentID", content.Id)
 
-        <span class="cov8" title="1">var existingContent models.Content
+        var existingContent models.Content
         err := r.DB.Collection(coll).FindOne(context.TODO(), bson.M{"id": content.Id}).Decode(&amp;existingContent)
         if err == nil </span><span class="cov8" title="1">{
-                return "", errors.New("content with this ID already exists")
+                err := errors.New("content with this ID already exists")
+                slog.Error("Content with this ID already exists", "contentID", content.Id, "error", err)
+                return "", err
         }</span>
+        <span class="cov8" title="1">slog.Debug("No existing content with this ID found", "contentID", content.Id)
 
-        <span class="cov8" title="1">_, err = r.DB.Collection(coll).InsertOne(
+        _, err = r.DB.Collection(coll).InsertOne(
                 context.TODO(),
                 content,
         )
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to insert content", "collection", coll, "contentID", content.Id, "error", err)
                 return "", err
         }</span>
+        <span class="cov8" title="1">slog.Info("Content inserted successfully", "collection", coll, "contentID", content.Id)
 
-        <span class="cov8" title="1">return content.Id, nil</span>
+        return content.Id, nil</span>
 }
 
 func validateUUID(fl validator.FieldLevel) bool <span class="cov8" title="1">{
@@ -284,15 +332,19 @@ func validateUUID(fl validator.FieldLevel) bool <span class="cov8" title="1">{
 }</span>
 
 func validateContent(content *models.Content) error <span class="cov8" title="1">{
+        slog.Debug("Validating content", "contentID", content.Id)
         validate := validator.New()
         validate.RegisterValidation("uuid", validateUUID)
         err := validate.Struct(content)
         if err != nil </span><span class="cov8" title="1">{
                 for _, err := range err.(validator.ValidationErrors) </span><span class="cov8" title="1">{
-                        return fmt.Errorf("field %s is not valid: %v", err.StructField(), err)
+                        validationError := fmt.Errorf("field %s is not valid: %v", err.StructField(), err)
+                        slog.Error("Validation error", "field", err.StructField(), "error", validationError)
+                        return validationError
                 }</span>
         }
-        <span class="cov8" title="1">return nil</span>
+        <span class="cov8" title="1">slog.Debug("Content validation passed", "contentID", content.Id)
+        return nil</span>
 }
 </pre>
 		
@@ -300,6 +352,7 @@ func validateContent(content *models.Content) error <span class="cov8" title="1"
 
 import (
         "context"
+        "log/slog"
         "time"
 
         "github.com/YanSystems/cms/pkg/models"
@@ -307,37 +360,49 @@ import (
 )
 
 func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent *models.UpdateContent) (string, error) <span class="cov8" title="1">{
+        slog.Info("UpdateContent called", "collection", coll, "id", id)
+
         // Fetch the current content from the database
         currentContent, err := r.GetContent(coll, id)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to get current content", "collection", coll, "id", id, "error", err)
                 return "", err
         }</span>
+        <span class="cov8" title="1">slog.Debug("Current content fetched", "currentContent", currentContent)
 
         // Update fields only if they are set in updatedContent
-        <span class="cov8" title="1">if updatedContent.Class != nil </span><span class="cov8" title="1">{
+        if updatedContent.Class != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating Class", "oldValue", currentContent.Class, "newValue", *updatedContent.Class)
                 currentContent.Class = *updatedContent.Class
         }</span>
         <span class="cov8" title="1">if updatedContent.Title != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating Title", "oldValue", currentContent.Title, "newValue", *updatedContent.Title)
                 currentContent.Title = *updatedContent.Title
         }</span>
         <span class="cov8" title="1">if updatedContent.Description != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating Description", "oldValue", currentContent.Description, "newValue", *updatedContent.Description)
                 currentContent.Description = *updatedContent.Description
         }</span>
         <span class="cov8" title="1">if updatedContent.Body != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating Body", "oldValue", currentContent.Body, "newValue", *updatedContent.Body)
                 currentContent.Body = *updatedContent.Body
         }</span>
         <span class="cov8" title="1">if updatedContent.Views != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating Views", "oldValue", currentContent.Views, "newValue", *updatedContent.Views)
                 currentContent.Views = *updatedContent.Views
         }</span>
         <span class="cov8" title="1">if updatedContent.CreatorId != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating CreatorId", "oldValue", currentContent.CreatorId, "newValue", *updatedContent.CreatorId)
                 currentContent.CreatorId = *updatedContent.CreatorId
         }</span>
         <span class="cov8" title="1">if updatedContent.IsPublic != nil </span><span class="cov8" title="1">{
+                slog.Debug("Updating IsPublic", "oldValue", currentContent.IsPublic, "newValue", *updatedContent.IsPublic)
                 currentContent.IsPublic = *updatedContent.IsPublic
         }</span>
 
         // Always update UpdatedAt to the current time
         <span class="cov8" title="1">currentContent.UpdatedAt = time.Now().UTC()
+        slog.Debug("Updated UpdatedAt", "newValue", currentContent.UpdatedAt)
 
         // Ensure CreatedAt is never updated
         updatedContent.CreatedAt = &amp;currentContent.CreatedAt
@@ -350,10 +415,12 @@ func (r *ContentRepository) UpdateContent(coll string, id string, updatedContent
         )
 
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to update content", "collection", coll, "id", id, "error", err)
                 return "", err
         }</span>
 
-        <span class="cov8" title="1">return id, nil</span>
+        <span class="cov8" title="1">slog.Info("Content updated successfully", "collection", coll, "id", id)
+        return id, nil</span>
 }
 </pre>
 		
@@ -379,6 +446,7 @@ type Server struct {
 }
 
 func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
+        slog.Info("Setting up new router")
         router := chi.NewRouter()
 
         router.Use(cors.Handler(cors.Options{
@@ -389,14 +457,16 @@ func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
                 AllowCredentials: true,
                 MaxAge:           300,
         }))
+        slog.Info("CORS middleware configured")
 
         // Health check
         router.Get("/health", func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
                 w.WriteHeader(http.StatusOK)
                 w.Write([]byte("OK"))
         }</span>)
+        <span class="cov8" title="1">slog.Info("Health check route configured")
 
-        <span class="cov8" title="1">contentService := services.ContentService{DB: s.DB}
+        contentService := services.ContentService{DB: s.DB}
 
         // Content services
         router.Post("/contents/{collection}", contentService.HandleCreateContent)
@@ -407,24 +477,31 @@ func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
         router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
         router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
         router.Delete("/contents/{collection}/class/{class}", contentService.HandleDeleteClass)
+        slog.Info("Content service routes configured")
 
         return router</span>
 }
 
 func (s *Server) NewServer() *http.Server <span class="cov8" title="1">{
+        slog.Info("Connecting to database")
         client, err := utils.ConnectToDB()
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to connect to database", "error", err)
                 log.Fatal(err)
         }</span>
 
         <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                slog.Info("Disconnecting from database")
                 if err := client.Disconnect(context.TODO()); err != nil </span><span class="cov0" title="0">{
+                        slog.Error("Failed to disconnect from database", "error", err)
                         panic(err)</span>
                 }
+                <span class="cov8" title="1">slog.Info("Disconnected from database successfully")</span>
         }()
 
         <span class="cov8" title="1">s.Port = "8000"
         s.DB = client.Database("content")
+        slog.Info("Database connection established", "db", "content")
 
         router := s.NewRouter()
         server := &amp;http.Server{
@@ -432,6 +509,7 @@ func (s *Server) NewServer() *http.Server <span class="cov8" title="1">{
                 Handler: router,
         }
 
+        slog.Info("New server instance created", "port", s.Port)
         return server</span>
 }
 
@@ -440,6 +518,7 @@ func (s *Server) Run(server *http.Server) <span class="cov0" title="0">{
 
         err := server.ListenAndServe()
         if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Server encountered an error", "error", err)
                 log.Panic(err)
                 return
         }</span>
@@ -467,7 +546,9 @@ type ContentService struct {
 }
 
 func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleCreateContent called")
         coll := chi.URLParam(r, "collection")
+        slog.Debug("Collection parameter extracted", "collection", coll)
 
         var c models.Content
         err := utils.ReadJSON(w, r, &amp;c)
@@ -476,10 +557,12 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Debug("JSON request body read successfully", "content", c)
 
-        <span class="cov8" title="1">c.Id = uuid.New().String()
+        c.Id = uuid.New().String()
         c.UpdatedAt = time.Now().UTC()
         c.CreatedAt = time.Now().UTC()
+        slog.Debug("Generated new UUID and timestamps", "id", c.Id, "created_at", c.CreatedAt, "updated_at", c.UpdatedAt)
 
         if c.Class == "" || c.Title == "" || c.Description == "" || c.Body == "" || c.Views &lt; 0 || c.CreatorId == "" </span><span class="cov8" title="1">{
                 err := errors.New("missing fields in request payload")
@@ -487,86 +570,115 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Request payload validated successfully")
 
-        <span class="cov8" title="1">repo := repositories.ContentRepository{DB: s.DB}
+        repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Creating content...")
         id, err := repo.CreateContent(coll, &amp;c)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to create content", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Content created successfully", "id", id)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully created content",
                 Data:    id,
         }
 
-        utils.WriteJSON(w, http.StatusCreated, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusCreated, responsePayload)
+        slog.Info("Response sent for HandleCreateContent", "status", http.StatusCreated)</span>
 }
 
 func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleGetContent called")
         coll := chi.URLParam(r, "collection")
         id := chi.URLParam(r, "id")
+        slog.Debug("Collection and ID parameters extracted", "collection", coll, "id", id)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Getting content of id " + id)
         content, err := repo.GetContent(coll, id)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Failed to get content", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Content retrieved successfully", "content", content)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully retrieved content",
                 Data:    content,
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleGetContent", "status", http.StatusOK)</span>
 }
 
 func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleGetCollection called")
         coll := chi.URLParam(r, "collection")
+        slog.Debug("Collection parameter extracted", "collection", coll)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Getting collection...")
         collection, err := repo.GetCollection(coll)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to get collection", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Collection retrieved successfully", "collection", collection)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully retrieved collection",
                 Data:    collection,
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleGetCollection", "status", http.StatusOK)</span>
 }
+
 func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleGetClass called")
         coll := chi.URLParam(r, "collection")
-        class := chi.URLParam(r, "collection")
+        class := chi.URLParam(r, "class")
+        slog.Debug("Collection and Class parameters extracted", "collection", coll, "class", class)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Getting class...")
         contents, err := repo.GetClass(coll, class)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to get class", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Class contents retrieved successfully", "contents", contents)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully retrieved class",
                 Data:    contents,
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleGetClass", "status", http.StatusOK)</span>
 }
 
 func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleUpdateContent called")
         var c models.UpdateContent
         err := utils.ReadJSON(w, r, &amp;c)
         if err != nil </span><span class="cov0" title="0">{
@@ -574,82 +686,112 @@ func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Requ
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Debug("JSON request body read successfully", "content", c)
 
-        <span class="cov8" title="1">coll := chi.URLParam(r, "collection")
+        coll := chi.URLParam(r, "collection")
         id := chi.URLParam(r, "id")
+        slog.Debug("Collection and ID parameters extracted", "collection", coll, "id", id)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Updating content of id " + id)
         id, err = repo.UpdateContent(coll, id, &amp;c)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to update content", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Content updated successfully", "id", id)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully updated content",
                 Data:    id,
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleUpdateContent", "status", http.StatusOK)</span>
 }
+
 func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleDeleteContent called")
         coll := chi.URLParam(r, "collection")
         id := chi.URLParam(r, "id")
+        slog.Debug("Collection and ID parameters extracted", "collection", coll, "id", id)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Deleting content of id " + id)
         _, err := repo.DeleteContent(coll, id)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to delete content", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Content deleted successfully", "id", id)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully deleted content",
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleDeleteContent", "status", http.StatusOK)</span>
 }
+
 func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleDeleteClass called")
         coll := chi.URLParam(r, "collection")
         class := chi.URLParam(r, "class")
+        slog.Debug("Collection and Class parameters extracted", "collection", coll, "class", class)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Deleting class...")
         _, err := repo.DeleteClass(coll, class)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to delete class", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Class deleted successfully", "class", class)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully deleted class",
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleDeleteClass", "status", http.StatusOK)</span>
 }
 
 func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        slog.Debug("HandleDeleteCollection called")
         coll := chi.URLParam(r, "collection")
+        slog.Debug("Collection parameter extracted", "collection", coll)
 
         repo := repositories.ContentRepository{DB: s.DB}
+        slog.Debug("ContentRepository initialized")
+
+        slog.Info("Deleting collection...")
         _, err := repo.DeleteCollection(coll)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to delete collection", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
+        <span class="cov8" title="1">slog.Info("Collection deleted successfully", "collection", coll)
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully deleted collection",
         }
 
-        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+        utils.WriteJSON(w, http.StatusOK, responsePayload)
+        slog.Info("Response sent for HandleDeleteCollection", "status", http.StatusOK)</span>
 }
 </pre>
 		
@@ -658,24 +800,31 @@ func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.R
 import (
         "context"
         "fmt"
+        "log/slog"
         "os"
 
         "go.mongodb.org/mongo-driver/mongo"
         "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectToDB() (*mongo.Client, error) <span class="cov0" title="0">{
+func ConnectToDB() (*mongo.Client, error) <span class="cov8" title="1">{
+        slog.Debug("Loading environment variable 'YAN_CMS_DB_URI'...")
         uri := os.Getenv("YAN_CMS_DB_URI")
-        if uri == "" </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("set your 'YAN_CMS_DB_URI' environment variable")
-        }</span>
-
-        <span class="cov0" title="0">client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
-        if err != nil </span><span class="cov0" title="0">{
+        if uri == "" </span><span class="cov8" title="1">{
+                err := fmt.Errorf("set your 'YAN_CMS_DB_URI' environment variable")
+                slog.Error("Environment variable YAN_CMS_DB_URI not set", "error", err)
                 return nil, err
         }</span>
+        <span class="cov8" title="1">slog.Debug("Environment variable YAN_CMS_DB_URI loaded", "uri", uri)
 
-        <span class="cov0" title="0">return client, nil</span>
+        client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to connect to MongoDB", "error", err)
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">slog.Info("Successfully connected to MongoDB!")
+
+        return client, nil</span>
 }
 </pre>
 		
@@ -685,12 +834,14 @@ import (
         "encoding/json"
         "errors"
         "io"
+        "log/slog"
         "net/http"
 
         "github.com/YanSystems/cms/pkg/models"
 )
 
 func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error <span class="cov8" title="1">{
+        slog.Debug("ReadJSON called")
         maxBytes := 1048576 // one megabyte
 
         r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
@@ -698,50 +849,64 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error <span clas
         dec := json.NewDecoder(r.Body)
         err := dec.Decode(data)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to decode JSON", "error", err)
                 return err
         }</span>
+        <span class="cov8" title="1">slog.Debug("JSON decoded successfully", "data", data)
 
-        <span class="cov8" title="1">err = dec.Decode(&amp;struct{}{})
+        err = dec.Decode(&amp;struct{}{})
         if err != io.EOF </span><span class="cov8" title="1">{
-                return errors.New("body must have only a single JSON value")
+                err := errors.New("body must have only a single JSON value")
+                slog.Error("JSON body must have only a single value", "error", err)
+                return err
         }</span>
 
         <span class="cov8" title="1">return nil</span>
 }
 
 func WriteJSON(w http.ResponseWriter, status int, data any, headers ...http.Header) error <span class="cov8" title="1">{
+        slog.Debug("WriteJSON called", "status", status, "data", data)
+
         out, err := json.Marshal(data)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to marshal JSON", "error", err)
                 return err
         }</span>
+        <span class="cov8" title="1">slog.Debug("JSON marshalled successfully")
 
-        <span class="cov8" title="1">if len(headers) &gt; 0 </span><span class="cov8" title="1">{
+        if len(headers) &gt; 0 </span><span class="cov8" title="1">{
                 for key, value := range headers[0] </span><span class="cov8" title="1">{
                         w.Header()[key] = value
                 }</span>
+                <span class="cov8" title="1">slog.Debug("Custom headers set", "headers", headers[0])</span>
         }
 
         <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
         w.WriteHeader(status)
         _, err = w.Write(out)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Failed to write JSON response", "error", err)
                 return err
         }</span>
 
-        <span class="cov8" title="1">return nil</span>
+        <span class="cov8" title="1">slog.Debug("JSON response written successfully")
+        return nil</span>
 }
 
 func ErrorJSON(w http.ResponseWriter, err error, status ...int) error <span class="cov8" title="1">{
+        slog.Debug("ErrorJSON called", "error", err)
         statusCode := http.StatusBadRequest
 
         if len(status) &gt; 0 </span><span class="cov8" title="1">{
                 statusCode = status[0]
+                slog.Debug("Custom status code set", "statusCode", statusCode)
         }</span>
 
         <span class="cov8" title="1">var payload models.JsonResponse
         payload.Error = true
         payload.Message = err.Error()
 
+        slog.Debug("Error payload prepared", "payload", payload)
         return WriteJSON(w, statusCode, payload)</span>
 }
 </pre>

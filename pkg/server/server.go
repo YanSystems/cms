@@ -20,6 +20,7 @@ type Server struct {
 }
 
 func (s *Server) NewRouter() http.Handler {
+	slog.Info("Setting up new router")
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
@@ -30,12 +31,14 @@ func (s *Server) NewRouter() http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	slog.Info("CORS middleware configured")
 
 	// Health check
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
+	slog.Info("Health check route configured")
 
 	contentService := services.ContentService{DB: s.DB}
 
@@ -48,24 +51,31 @@ func (s *Server) NewRouter() http.Handler {
 	router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
 	router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
 	router.Delete("/contents/{collection}/class/{class}", contentService.HandleDeleteClass)
+	slog.Info("Content service routes configured")
 
 	return router
 }
 
 func (s *Server) NewServer() *http.Server {
+	slog.Info("Connecting to database")
 	client, err := utils.ConnectToDB()
 	if err != nil {
+		slog.Error("Failed to connect to database", "error", err)
 		log.Fatal(err)
 	}
 
 	defer func() {
+		slog.Info("Disconnecting from database")
 		if err := client.Disconnect(context.TODO()); err != nil {
+			slog.Error("Failed to disconnect from database", "error", err)
 			panic(err)
 		}
+		slog.Info("Disconnected from database successfully")
 	}()
 
 	s.Port = "8000"
 	s.DB = client.Database("content")
+	slog.Info("Database connection established", "db", "content")
 
 	router := s.NewRouter()
 	server := &http.Server{
@@ -73,6 +83,7 @@ func (s *Server) NewServer() *http.Server {
 		Handler: router,
 	}
 
+	slog.Info("New server instance created", "port", s.Port)
 	return server
 }
 
@@ -81,6 +92,7 @@ func (s *Server) Run(server *http.Server) {
 
 	err := server.ListenAndServe()
 	if err != nil {
+		slog.Error("Server encountered an error", "error", err)
 		log.Panic(err)
 		return
 	}
