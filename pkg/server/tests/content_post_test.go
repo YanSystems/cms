@@ -12,6 +12,7 @@ import (
 	"github.com/YanSystems/cms/pkg/models"
 	"github.com/YanSystems/cms/pkg/server"
 	utils "github.com/YanSystems/cms/pkg/utils"
+	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -54,83 +55,83 @@ func (chtc *ContentHandlerTestCase) RunContentPostTest(t *testing.T) {
 	assert.Equal(t, chtc.ExpectedResponse.Message, responsePayload.Message, "Message field mismatch")
 }
 
-// func TestHandleCreateContentValid(t *testing.T) {
-// 	content := models.Content{
-// 		Class:       "test-class",
-// 		Title:       "test-title",
-// 		Description: "test-description",
-// 		Body:        "test-body",
-// 		IsPublic:    true,
-// 		Views:       0,
-// 		CreatorId:   uuid.New().String(),
-// 	}
+func TestHandleCreateContentValid(t *testing.T) {
+	content := models.Content{
+		Class:       "test-class",
+		Title:       "test-title",
+		Description: "test-description",
+		Body:        "test-body",
+		IsPublic:    true,
+		Views:       0,
+		CreatorId:   uuid.New().String(),
+	}
 
-// 	chtc := ContentHandlerTestCase{
-// 		Path:           "/" + testsCollection,
-// 		RequestPayload: content,
-// 		ExpectedStatus: http.StatusCreated,
-// 		ExpectedResponse: models.JsonResponse{
-// 			Error:   false,
-// 			Message: "Successfully created content",
-// 		},
-// 	}
+	chtc := ContentHandlerTestCase{
+		Path:           "/" + testsCollection,
+		RequestPayload: content,
+		ExpectedStatus: http.StatusCreated,
+		ExpectedResponse: models.JsonResponse{
+			Error:   false,
+			Message: "Successfully created content",
+		},
+	}
 
-// 	chtc.RunContentPostTest(t)
-// }
+	chtc.RunContentPostTest(t)
+}
 
-// func TestHandleCreateContentIncorrectFields(t *testing.T) {
-// 	content := models.Content{
-// 		Class:       "test-class",
-// 		Title:       "test-title",
-// 		Description: "test-description",
-// 		Body:        "test-body",
-// 		IsPublic:    true,
-// 		Views:       0,
-// 		CreatorId:   uuid.New().String(),
-// 	}
+func TestHandleCreateContentIncorrectFields(t *testing.T) {
+	content := models.Content{
+		Class:       "test-class",
+		Title:       "test-title",
+		Description: "test-description",
+		Body:        "test-body",
+		IsPublic:    true,
+		Views:       0,
+		CreatorId:   uuid.New().String(),
+	}
 
-// 	chtc := ContentHandlerTestCase{
-// 		Path:           "/" + testsCollection,
-// 		RequestPayload: content,
-// 		ExpectedStatus: http.StatusBadRequest,
-// 		ExpectedResponse: models.JsonResponse{
-// 			Error:   true,
-// 			Message: "missing fields in request payload",
-// 		},
-// 	}
+	chtc := ContentHandlerTestCase{
+		Path:           "/" + testsCollection,
+		RequestPayload: content,
+		ExpectedStatus: http.StatusBadRequest,
+		ExpectedResponse: models.JsonResponse{
+			Error:   true,
+			Message: "missing fields in request payload",
+		},
+	}
 
-// 	t.Run("Missing class field", func(t *testing.T) {
-// 		chtc.RequestPayload.Class = ""
-// 		chtc.RunContentPostTest(t)
-// 		chtc.RequestPayload.Class = "test-class"
-// 	})
+	t.Run("Missing class field", func(t *testing.T) {
+		chtc.RequestPayload.Class = ""
+		chtc.RunContentPostTest(t)
+		chtc.RequestPayload.Class = "test-class"
+	})
 
-// 	t.Run("Missing title field", func(t *testing.T) {
-// 		chtc.RequestPayload.Title = ""
-// 		chtc.RunContentPostTest(t)
-// 		chtc.RequestPayload.Title = "test-title"
-// 	})
+	t.Run("Missing title field", func(t *testing.T) {
+		chtc.RequestPayload.Title = ""
+		chtc.RunContentPostTest(t)
+		chtc.RequestPayload.Title = "test-title"
+	})
 
-// 	t.Run("Missing description field", func(t *testing.T) {
-// 		chtc.RequestPayload.Description = ""
-// 		chtc.RunContentPostTest(t)
-// 		chtc.RequestPayload.Description = "test-description"
-// 	})
+	t.Run("Missing description field", func(t *testing.T) {
+		chtc.RequestPayload.Description = ""
+		chtc.RunContentPostTest(t)
+		chtc.RequestPayload.Description = "test-description"
+	})
 
-// 	t.Run("Missing body field", func(t *testing.T) {
-// 		chtc.RequestPayload.Body = ""
-// 		chtc.RunContentPostTest(t)
-// 		chtc.RequestPayload.Body = "test-body"
-// 	})
+	t.Run("Missing body field", func(t *testing.T) {
+		chtc.RequestPayload.Body = ""
+		chtc.RunContentPostTest(t)
+		chtc.RequestPayload.Body = "test-body"
+	})
 
-// 	t.Run("Incorrect views field", func(t *testing.T) {
-// 		chtc.RequestPayload.Views = -1
-// 		chtc.RunContentPostTest(t)
-// 		chtc.RequestPayload.Views = 0
-// 	})
+	t.Run("Incorrect views field", func(t *testing.T) {
+		chtc.RequestPayload.Views = -1
+		chtc.RunContentPostTest(t)
+		chtc.RequestPayload.Views = 0
+	})
 
-// 	t.Run("Missing creator_id", func(t *testing.T) {
-// 		chtc.RequestPayload.CreatorId = ""
-// 		chtc.RunContentPostTest(t)
-// 	})
-// }
+	t.Run("Missing creator_id", func(t *testing.T) {
+		chtc.RequestPayload.CreatorId = ""
+		chtc.RunContentPostTest(t)
+	})
+}
