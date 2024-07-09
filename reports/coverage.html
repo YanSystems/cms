@@ -67,7 +67,7 @@
 				
 				<option value="file5">github.com/YanSystems/cms/pkg/server/server.go (77.4%)</option>
 				
-				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (30.3%)</option>
+				<option value="file6">github.com/YanSystems/cms/pkg/services/content.go (20.6%)</option>
 				
 				<option value="file7">github.com/YanSystems/cms/pkg/utils/db.go (0.0%)</option>
 				
@@ -406,7 +406,7 @@ func (s *Server) NewRouter() http.Handler <span class="cov8" title="1">{
         router.Put("/contents/{collection}/id/{id}", contentService.HandleUpdateContent)
         router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
         router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
-        router.Delete("/contnets/{collection}/class/{class}", contentService.HandleDeleteClass)
+        router.Delete("/contents/{collection}/class/{class}", contentService.HandleDeleteClass)
 
         return router</span>
 }
@@ -505,19 +505,19 @@ func (s *ContentService) HandleCreateContent(w http.ResponseWriter, r *http.Requ
         utils.WriteJSON(w, http.StatusCreated, responsePayload)</span>
 }
 
-func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
         coll := chi.URLParam(r, "collection")
         id := chi.URLParam(r, "id")
 
         repo := repositories.ContentRepository{DB: s.DB}
         content, err := repo.GetContent(coll, id)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Failed to get content", "error", err)
                 utils.ErrorJSON(w, err)
                 return
         }</span>
 
-        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+        <span class="cov0" title="0">responsePayload := models.JsonResponse{
                 Error:   false,
                 Message: "Successfully retrieved content",
                 Data:    content,
@@ -526,12 +526,131 @@ func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request
         utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
 }
 
-func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
-func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {<span class="cov0" title="0">}</span>
-func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
-func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request)    {<span class="cov0" title="0">}</span>
-func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request)      {<span class="cov0" title="0">}</span>
-func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">}</span>
+func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        coll := chi.URLParam(r, "collection")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        collection, err := repo.GetCollection(coll)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to get collection", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov0" title="0">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully retrieved collection",
+                Data:    collection,
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        coll := chi.URLParam(r, "collection")
+        class := chi.URLParam(r, "collection")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        contents, err := repo.GetClass(coll, class)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to get class", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov0" title="0">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully retrieved class",
+                Data:    contents,
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+
+func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        var c models.UpdateContent
+        err := utils.ReadJSON(w, r, &amp;c)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to read JSON request", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov0" title="0">coll := chi.URLParam(r, "collection")
+        id := chi.URLParam(r, "id")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        id, err = repo.UpdateContent(coll, id, &amp;c)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to update content", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov0" title="0">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully updated content",
+                Data:    id,
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        coll := chi.URLParam(r, "collection")
+        id := chi.URLParam(r, "id")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        _, err := repo.DeleteContent(coll, id)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to delete content", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully deleted content",
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        coll := chi.URLParam(r, "collection")
+        class := chi.URLParam(r, "class")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        _, err := repo.DeleteClass(coll, class)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to delete class", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully deleted class",
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
+
+func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        coll := chi.URLParam(r, "collection")
+
+        repo := repositories.ContentRepository{DB: s.DB}
+        _, err := repo.DeleteCollection(coll)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to delete collection", "error", err)
+                utils.ErrorJSON(w, err)
+                return
+        }</span>
+
+        <span class="cov8" title="1">responsePayload := models.JsonResponse{
+                Error:   false,
+                Message: "Successfully deleted collection",
+        }
+
+        utils.WriteJSON(w, http.StatusOK, responsePayload)</span>
+}
 </pre>
 		
 		<pre class="file" id="file7" style="display: none">package utils

@@ -78,9 +78,128 @@ func (s *ContentService) HandleGetContent(w http.ResponseWriter, r *http.Request
 	utils.WriteJSON(w, http.StatusOK, responsePayload)
 }
 
-func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request)    {}
-func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request)         {}
-func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request)    {}
-func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request)    {}
-func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request)      {}
-func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) {}
+func (s *ContentService) HandleGetCollection(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	collection, err := repo.GetCollection(coll)
+	if err != nil {
+		slog.Error("Failed to get collection", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully retrieved collection",
+		Data:    collection,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+func (s *ContentService) HandleGetClass(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+	class := chi.URLParam(r, "collection")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	contents, err := repo.GetClass(coll, class)
+	if err != nil {
+		slog.Error("Failed to get class", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully retrieved class",
+		Data:    contents,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+
+func (s *ContentService) HandleUpdateContent(w http.ResponseWriter, r *http.Request) {
+	var c models.UpdateContent
+	err := utils.ReadJSON(w, r, &c)
+	if err != nil {
+		slog.Error("Failed to read JSON request", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	coll := chi.URLParam(r, "collection")
+	id := chi.URLParam(r, "id")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	id, err = repo.UpdateContent(coll, id, &c)
+	if err != nil {
+		slog.Error("Failed to update content", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully updated content",
+		Data:    id,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+func (s *ContentService) HandleDeleteContent(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+	id := chi.URLParam(r, "id")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	_, err := repo.DeleteContent(coll, id)
+	if err != nil {
+		slog.Error("Failed to delete content", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully deleted content",
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+func (s *ContentService) HandleDeleteClass(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+	class := chi.URLParam(r, "class")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	_, err := repo.DeleteClass(coll, class)
+	if err != nil {
+		slog.Error("Failed to delete class", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully deleted class",
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}
+
+func (s *ContentService) HandleDeleteCollection(w http.ResponseWriter, r *http.Request) {
+	coll := chi.URLParam(r, "collection")
+
+	repo := repositories.ContentRepository{DB: s.DB}
+	_, err := repo.DeleteCollection(coll)
+	if err != nil {
+		slog.Error("Failed to delete collection", "error", err)
+		utils.ErrorJSON(w, err)
+		return
+	}
+
+	responsePayload := models.JsonResponse{
+		Error:   false,
+		Message: "Successfully deleted collection",
+	}
+
+	utils.WriteJSON(w, http.StatusOK, responsePayload)
+}

@@ -47,7 +47,7 @@ func (s *Server) NewRouter() http.Handler {
 	router.Put("/contents/{collection}/id/{id}", contentService.HandleUpdateContent)
 	router.Delete("/contents/{collection}", contentService.HandleDeleteCollection)
 	router.Delete("/contents/{collection}/id/{id}", contentService.HandleDeleteContent)
-	router.Delete("/contnets/{collection}/class/{class}", contentService.HandleDeleteClass)
+	router.Delete("/contents/{collection}/class/{class}", contentService.HandleDeleteClass)
 
 	return router
 }
