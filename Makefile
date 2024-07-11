@@ -20,7 +20,7 @@ cov: test
 
 image:
 	@echo "$(BOLD)$(AQUA)YAN >$(RESET)$(YELLOW) Building docker image for ${APP_NAME} microservice...$(RESET)"
-	@exec docker build -t ${APP_NAME} .
+	@exec docker build -t cms .
 
 up:
 	@echo "$(BOLD)$(AQUA)YAN >$(RESET)$(YELLOW) Starting the ${APP_NAME} microservice in a docker container...$(RESET)"
