@@ -57,25 +57,7 @@ func (s *Server) NewRouter() http.Handler {
 }
 
 func (s *Server) NewServer() *http.Server {
-	slog.Info("Connecting to database")
-	client, err := utils.ConnectToDB()
-	if err != nil {
-		slog.Error("Failed to connect to database", "error", err)
-		log.Fatal(err)
-	}
-
-	defer func() {
-		slog.Info("Disconnecting from database")
-		if err := client.Disconnect(context.TODO()); err != nil {
-			slog.Error("Failed to disconnect from database", "error", err)
-			panic(err)
-		}
-		slog.Info("Disconnected from database successfully")
-	}()
-
 	s.Port = "8000"
-	s.DB = client.Database("content")
-	slog.Info("Database connection established", "db", "content")
 
 	router := s.NewRouter()
 	server := &http.Server{
@@ -87,10 +69,29 @@ func (s *Server) NewServer() *http.Server {
 	return server
 }
 
-func (s *Server) Run(server *http.Server) {
+func (s *Server) Run() {
+	client, err := utils.ConnectToDB()
+	slog.Info("Connecting to database")
+	if err != nil {
+		slog.Error("Failed to connect to database", "error", err)
+		log.Fatal(err)
+	}
+	defer func() {
+		slog.Info("Disconnecting from database")
+		if err := client.Disconnect(context.TODO()); err != nil {
+			slog.Error("Failed to disconnect from database", "error", err)
+			panic(err)
+		}
+		slog.Info("Disconnected from database successfully")
+	}()
+
+	s.DB = client.Database("content")
+	slog.Info("Database connection established", "db", "content")
+
 	slog.Info(fmt.Sprintf("The server is now live on port %s", s.Port))
 
-	err := server.ListenAndServe()
+	srv := s.NewServer()
+	err = srv.ListenAndServe()
 	if err != nil {
 		slog.Error("Server encountered an error", "error", err)
 		log.Panic(err)

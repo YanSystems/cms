@@ -5,7 +5,6 @@ import (
 )
 
 func main() {
-	api := server.Server{}
-	server := api.NewServer()
-	api.Run(server)
+	server := server.Server{}
+	server.Run()
 }
